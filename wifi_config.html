@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Group16_AirQ_WIFI_CONFIG</title>
+  </head>
+  <style>
+    input {
+      padding: 0.3rem 0.6rem;
+      font-size: 2rem;
+      border: 0;
+      border-bottom: 1px solid #666;
+      margin: 0 10px;
+    }
+    input:focus {
+      outline: none;
+      border-bottom-width: 2px;
+    }
+    label {
+      font-size: 2rem;
+    }
+    button {
+      padding: 0.4rem 1.5rem;
+      width: auto;
+      margin: 40px auto;
+      font-size: 2rem;
+    }
+  </style>
+  <body style="width: 40rem; margin: 100px auto">
+    <div
+      style="
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 40px;
+        font-size: 2rem;
+      "
+    >
+      <a href="/">Home</a>
+      <a href="/sensors">Sensors</a>
+      <p style="margin-left: auto">
+        Status: <b id="status" style="color: red">OFFLINE</b>
+      </p>
+    </div>
+    <div
+      style="
+        border: 1px solid #cdcdcd;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        padding: 2rem 3rem;
+      "
+    >
+      <h1 style="text-align: center; font-size: 5rem">Wifi config</h1>
+      <div>
+        <form
+          action="javascript:void(0);"
+          style="display: flex; flex-direction: column; width: 100%"
+        >
+          <label for="ssid">SSID: </label>
+          <input name="ssid" required />
+          <label style="margin-top: 24px" for="password">Password: </label>
+          <input name="password" type="password" required />
+          <button id="submit-btn" type="submit">Submit</button>
+        </form>
+      </div>
+      <span id="response"></span>
+    </div>
+
+    <script>
+      document
+        .getElementById('submit-btn')
+        .addEventListener('click', function (ev) {
+          ev.preventDefault();
+          let formData = new FormData();
+          formData.append('ssid', document.querySelector('[name=ssid]').value);
+          formData.append(
+            'password',
+            document.querySelector('[name=password]').value
+          );
+          fetch('/api/wifi', { method: 'POST', body: formData })
+            .then((res) => {
+              document.getElementById('response').innerHTML +=
+                'Connecting to WiFi successfully! Trying to connecting to MQTT server<br>';
+              let i = 0;
+              const intervalId = setInterval(function () {
+                fetch('/api/mqtt')
+                  .then((response) => {
+                    document.getElementById('response').innerHTML +=
+                      'Connecting to MQTT successfully! You are currently ONLINE<br>';
+                    clearInterval(intervalId);
+                    document.getElementById('status').textContent = 'ONLINE';
+                    document.getElementById('status').style.color = 'green';
+                  })
+                  .catch((err) => {
+                    document.getElementById(
+                      'response'
+                    ).innerHTML = `Connecting to MQTT Failed! Attempting to try again! (${i})<br>`;
+                    document.getElementById('status').textContent = 'OFFLINE';
+                    document.getElementById('status').style.color = 'red';
+                  });
+              }, 5000);
+              setTimeout(function () {
+                clearInterval(intervalId);
+              }, 20000);
+            })
+            .catch((err) => {
+              document.getElementById('response').innerHTML +=
+                'Connecting to WiFi Failed! Please try again<br>';
+            });
+        });
+    </script>
+  </body>
+</html>

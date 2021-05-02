@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Group16_AirQ_HOME</title>
+    <style>
+      a {
+        padding: 1rem;
+        text-align: center;
+        background-color: black;
+        color: white;
+        border-radius: 10px;
+        text-decoration: none;
+        margin: 1rem auto;
+        width: 48%;
+      }
+      hr {
+        background-color: black;
+        height: 2px;
+      }
+    </style>
+  </head>
+  <body style="font-family: Rubik; width: 55rem; margin: auto; font-size: 2rem">
+    <p>Status: <b id="status" style="color: red">OFFLINE</b></p>
+    <h1 style="text-align: center; font-size: 6rem">Home</h1>
+    <div style="display: flex; flex-direction: column">
+      <a href="/wifi-config"> Config WiFi</a>
+      <a href="/sensors"> View sensors data</a>
+      <a href="/api/disconnect"> Disconnect WiFi</a>
+      <a href="#" onclick="aboutUsClicked()">About us</a>
+    </div>
+  </body>
+  <script>
+    function aboutUsClicked(ev) {
+      alert(
+        '------------- VL2 - GROUP 16 -------------\n18127136 - Nguyễn Đăng Huỳnh Long\n18127118 - Mai Đăng Khánh\n18127269 - Nguyễn Thái Tân\n ---------------------------------------------'
+      );
+    }
+    const intervalId = setInterval(function () {
+      fetch('/api/mqtt')
+        .then((response) => {
+          clearInterval(intervalId);
+          document.getElementById('status').textContent = 'ONLINE';
+          document.getElementById('status').style.color = 'green';
+        })
+        .catch((err) => {
+          document.getElementById('status').textContent = 'OFFLINE';
+          document.getElementById('status').style.color = 'red';
+        });
+    }, 5000);
+  </script>
+</html>
