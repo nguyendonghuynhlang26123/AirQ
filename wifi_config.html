@@ -24,6 +24,34 @@
       margin: 40px auto;
       font-size: 2rem;
     }
+    .loader {
+      border: 8px solid #f3f3f3;
+      border-radius: 50%;
+      border-top: 8px solid black;
+      margin: auto;
+      width: 30px;
+      height: 30px;
+      -webkit-animation: spin 1s linear infinite;
+      animation: spin 1s linear infinite;
+    }
+
+    @-webkit-keyframes spin {
+      0% {
+        -webkit-transform: rotate(0deg);
+      }
+      100% {
+        -webkit-transform: rotate(360deg);
+      }
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
   </style>
   <body style="width: 40rem; margin: 100px auto">
     <div
@@ -37,9 +65,6 @@
     >
       <a href="/">Home</a>
       <a href="/sensors">Sensors</a>
-      <p style="margin-left: auto">
-        Status: <b id="status" style="color: red">OFFLINE</b>
-      </p>
     </div>
     <div
       style="
@@ -53,6 +78,7 @@
       <h1 style="text-align: center; font-size: 5rem">Wifi config</h1>
       <div>
         <form
+          id="config-form"
           action="javascript:void(0);"
           style="display: flex; flex-direction: column; width: 100%"
         >
@@ -60,52 +86,79 @@
           <input name="ssid" required />
           <label style="margin-top: 24px" for="password">Password: </label>
           <input name="password" type="password" required />
-          <button id="submit-btn" type="submit">Submit</button>
+          <button id="submit-btn" type="submit">
+            <div id="loader" class="">Submit</div>
+          </button>
         </form>
       </div>
       <span id="response"></span>
     </div>
 
     <script>
+      const setEnable = (enable) => {
+        const submitBtn = document.getElementById('submit-btn');
+        const inner = document.getElementById('loader');
+
+        if (!enable) {
+          submitBtn.disabled = true;
+          inner.innerHTML = '';
+          inner.classList.add('loader');
+        } else {
+          submitBtn.disabled = false;
+          inner.innerHTML = 'Submit';
+          inner.classList.remove('loader');
+        }
+      };
+
+      const getMQTTStatus = (i, N, SEC) => {
+        fetch('/api/mqtt')
+          .then((response) => {
+            if (!response.ok) throw new Error('Cannot connect');
+            document.getElementById('response').innerHTML +=
+              'Connecting to MQTT successfully! You are currently ONLINE<br>';
+            setEnable(true);
+          })
+          .catch((err) => {
+            document.getElementById(
+              'response'
+            ).innerHTML += `Connecting to MQTT Failed! Attempting to try again! (${i})<br>`;
+            if (i < N) {
+              setTimeout(() => {
+                getMQTTStatus(i + 1, N, SEC);
+              }, SEC);
+            } else setEnable(true);
+          });
+      };
       document
         .getElementById('submit-btn')
         .addEventListener('click', function (ev) {
+          const inner = document.getElementById('loader');
           ev.preventDefault();
+          let ssid = document.querySelector('[name=ssid]').value;
+          let password = document.querySelector('[name=password]').value;
+          if (!ssid || !password) return;
           let formData = new FormData();
-          formData.append('ssid', document.querySelector('[name=ssid]').value);
-          formData.append(
-            'password',
-            document.querySelector('[name=password]').value
-          );
+          formData.append('ssid', ssid);
+          formData.append('password', password);
+          setEnable(false);
+
           fetch('/api/wifi', { method: 'POST', body: formData })
             .then((res) => {
+              if (!res.ok) {
+                if (res.status == 401) {
+                  alert('Invalid credentials');
+                  setEnable(true);
+                  return;
+                } else throw new Error('HTTP status: ' + res.status);
+              }
               document.getElementById('response').innerHTML +=
                 'Connecting to WiFi successfully! Trying to connecting to MQTT server<br>';
-              let i = 0;
-              const intervalId = setInterval(function () {
-                fetch('/api/mqtt')
-                  .then((response) => {
-                    document.getElementById('response').innerHTML +=
-                      'Connecting to MQTT successfully! You are currently ONLINE<br>';
-                    clearInterval(intervalId);
-                    document.getElementById('status').textContent = 'ONLINE';
-                    document.getElementById('status').style.color = 'green';
-                  })
-                  .catch((err) => {
-                    document.getElementById(
-                      'response'
-                    ).innerHTML = `Connecting to MQTT Failed! Attempting to try again! (${i})<br>`;
-                    document.getElementById('status').textContent = 'OFFLINE';
-                    document.getElementById('status').style.color = 'red';
-                  });
-              }, 5000);
-              setTimeout(function () {
-                clearInterval(intervalId);
-              }, 20000);
+
+              getMQTTStatus(0, 5, 4000);
             })
             .catch((err) => {
-              document.getElementById('response').innerHTML +=
-                'Connecting to WiFi Failed! Please try again<br>';
+              alert('Connect to WiFi Failed! ' + err.message);
+              setEnable(true);
             });
         });
     </script>

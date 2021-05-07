@@ -1,10 +1,9 @@
 //Function for displaying RGB.
 void showRGB(int red, int green, int blue)
-{ 
-  Serial.printf("-->LED: %i %i %i\n", red,green,blue);
+{  
   ledcWrite(RED_LED_CHANNEL, red); 
-  ledcWrite(BLUE_LED_CHANNEL, green); 
-  ledcWrite(GREEN_LED_CHANNEL, blue);
+  ledcWrite(BLUE_LED_CHANNEL, blue); 
+  ledcWrite(GREEN_LED_CHANNEL, green);
 }
  
 void led(){ 

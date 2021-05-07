@@ -1,6 +1,7 @@
 //PAGE & APIS -----------------------------------------
 void handleSensorPage();
 void handleGetState();
+void handleGetStatus();
 void handleLedApi();
 void handleWifiConnector();
 void handleMQTTConnector();
@@ -16,6 +17,7 @@ void configModeCallback (WiFiManager *myWiFiManager);
 bool setupConnection(String _ssid, String _password);
 void handleMsg(char *topic, char *msg);
 void onMsgReceived(char* topic, byte* payload, unsigned int length);
+bool attemptConnectMQTT();
 void reconnect();
  
 //SENSORS -------------------------------------

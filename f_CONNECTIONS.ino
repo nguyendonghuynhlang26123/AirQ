@@ -47,8 +47,7 @@ void onMsgReceived(char* topic, byte* payload, unsigned int length) {
   handleMsg(topic, (char *)payload);
 }
 
-//Try to reconnect to the broker
-void reconnect() { 
+bool attemptConnectMQTT() {
   Serial.print("Attempting MQTT connection...");
   // Create a random client ID
   String clientId = "ESP8266Client-";
@@ -63,12 +62,20 @@ void reconnect() {
     client.subscribe(TOPIC_IN_PING); 
     client.subscribe(TOPIC_IN_BUZZER);
     client.subscribe(TOPIC_IN_STATE);
+    return true;
   } else {
     Serial.print("failed, rc=");
-    Serial.print(client.state());
-    Serial.println(" try again in 5 seconds");
-    // Wait 5 seconds before retrying
-    delay(5000);
+    Serial.println(client.state()); 
+    return false;
+  }
+}
+
+//Try to reconnect to the broker
+void reconnect() { 
+  while (!client.connected()) {
+    bool res = attemptConnectMQTT();
+    if (!res) delay(5000);
+    else break;
   }
 }
 

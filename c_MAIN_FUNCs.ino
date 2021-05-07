@@ -38,9 +38,7 @@ void loop()
     server.handleClient();
     //MQTT
     if (!isOffline){
-      while (!client.connected()) {
-        reconnect();
-      }
+      
       client.loop();
       publishSensorDataOnInterval(2000);
     }

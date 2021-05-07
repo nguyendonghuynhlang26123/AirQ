@@ -32,12 +32,13 @@
   <script>
     function aboutUsClicked(ev) {
       alert(
-        '------------- VL2 - GROUP 16 -------------\n18127136 - Nguyễn Đăng Huỳnh Long\n18127118 - Mai Đăng Khánh\n18127269 - Nguyễn Thái Tân\n ---------------------------------------------'
+        '------------- VL2 - GROUP 16 -------------\n18127136 - Nguyen Dang Huynh Long\n18127118 - Mai Dang Khanh\n18127269 - Nguyen Thai Tan\n ---------------------------------------------'
       );
     }
     const intervalId = setInterval(function () {
-      fetch('/api/mqtt')
+      fetch('/api/status')
         .then((response) => {
+          if (!response.ok) throw Error('error');
           clearInterval(intervalId);
           document.getElementById('status').textContent = 'ONLINE';
           document.getElementById('status').style.color = 'green';
@@ -46,6 +47,6 @@
           document.getElementById('status').textContent = 'OFFLINE';
           document.getElementById('status').style.color = 'red';
         });
-    }, 5000);
+    }, 2000);
   </script>
 </html>

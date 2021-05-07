@@ -7,6 +7,8 @@ void handleGetState(){
 }
 void handleDisconnectApi(){
   WiFi.disconnect();
+  isOffline = true;
+  setupServer();
   server.send(200, "text/plain", "DISCONNECT SUCCESSFULLY");
 } 
 void handleLedApi(){
@@ -43,29 +45,22 @@ void handleWifiConnector(){
   
   bool res = setupConnection(pSsid, pPassword);
   if (res) server.send(200, "text/plain", "Connect successfully");
-  else server.send(400, "text/plain", "Connect Failed! Please check credensials again");
+  else server.send(401, "text/plain", "Connect Failed! Please check credensials again");
   
   isOffline = false;
 }
 
 void handleMQTTConnector(){
-  if (client.connected()) server.send(200, "text/plain", "ONLINE");
-  else server.send(400, "text/plain", "OFFLINE");
+  if (client.connected()) server.send(200, "text/plain", "ONLINE"); 
+
+  bool res = attemptConnectMQTT();
+  if (res) server.send(200, "text/plain", "ONLINE"); 
+  else server.send(400, "text/plain", "Failed! Try again");
 }
 
-void handleNotFound() {
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for (uint8_t i = 0; i < server.args(); i++) {
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-  }
-  server.send(404, "text/plain", message);
+void handleGetStatus(){
+  if (client.connected()) server.send(200, "text/plain", "ONLINE");
+  else server.send(400, "text/plain", "OFFLINE");
 }
 
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info){
@@ -74,6 +69,7 @@ void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info){
 }
 
 void setupServer(){
+   hasNoConnection = true;
    WiFi.softAP(ssid, password);
    WiFi.softAPConfig(local_ip, gateway, subnet);
    WiFi.onEvent(WiFiStationConnected, SYSTEM_EVENT_AP_STACONNECTED);
@@ -83,6 +79,7 @@ void setupServer(){
    server.on("/sensors", handleSensorPage);
    server.on("/wifi-config", handleWifiConfigPage);
    server.on("/api/state", handleGetState);
+   server.on("/api/status", handleGetStatus);
    server.on("/api/wifi", handleWifiConnector); 
    server.on("/api/mqtt", handleMQTTConnector); 
    server.on("/api/led-config", handleLedApi);
